@@ -206,7 +206,8 @@ namespace eHours
         private async void Authenticate(Action<bool> callback)
         //https://learn.microsoft.com/en-us/windows/apps/develop/security/windows-hello-login, and https://stackoverflow.com/questions/943852/how-to-send-an-https-get-request-in-c-sharp
         {
-            bool supported = await KeyCredentialManager.IsSupportedAsync();
+            callback?.Invoke(true);
+            /*bool supported = await KeyCredentialManager.IsSupportedAsync();
             if (supported)
             {
                 KeyCredentialRetrievalResult result =
@@ -228,7 +229,7 @@ namespace eHours
             {
                 // Handle the case where key credentials are not supported
                 callback?.Invoke(false);
-            }
+            }*/
         }
         private void OnFormResize(object sender, EventArgs e)
         {
@@ -297,7 +298,6 @@ namespace eHours
             Console.WriteLine($"Username: {username}");
             Console.WriteLine($"Password: {password}");
             string resp = await Post();
-            WriteToFile("resp2.txt", resp);
             resp = resp.Replace("\n", "");
             if (resp.Contains("<h2>Welcome to your"))
             {
@@ -307,7 +307,6 @@ namespace eHours
                 Console.WriteLine(nameOfAcademy);
 
                 string getresp = await Get("https://academyendorsement.olatheschools.com/Student/studentEHours.php");
-                WriteToFile("getresponse.txt", getresp);
 
                 // Create and show the new form, passing the necessary parameters and reference to this form
                 Home home = new Home(username, password, phpSessionId, nameOfPerson, nameOfAcademy, getresp);
