@@ -29,7 +29,17 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Home));
+            this.homeMenuPanel = new System.Windows.Forms.Panel();
             this.SuspendLayout();
+            // 
+            // homeMenuPanel
+            // 
+            this.homeMenuPanel.BackColor = System.Drawing.Color.Transparent;
+            this.homeMenuPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.homeMenuPanel.Location = new System.Drawing.Point(0, 0);
+            this.homeMenuPanel.Name = "homeMenuPanel";
+            this.homeMenuPanel.Size = new System.Drawing.Size(750, 500);
+            this.homeMenuPanel.TabIndex = 1;
             // 
             // Home
             // 
@@ -38,7 +48,7 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(750, 500);
-            this.DoubleBuffered = true;
+            this.Controls.Add(this.homeMenuPanel);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Home";
             this.Text = "eHour Portal - Made by Neil Patrao";
@@ -47,5 +57,7 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.Panel homeMenuPanel;
     }
 }

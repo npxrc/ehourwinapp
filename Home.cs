@@ -4,7 +4,10 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Xml;
+using HtmlAgilityPack;
+using System.Threading;
+using System.Net;
+using System.Net.Http;
 
 namespace eHours
 {
@@ -16,9 +19,14 @@ namespace eHours
         private string nameOfPerson;
         private string nameOfAcademy;
         private string getresp;
+        private CookieContainer _cookieContainer;
+        private HttpClientHandler _handler;
+        private HttpClient _client;
+
+        private HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
         private List<EHourRequest> eHourRequests = new List<EHourRequest>();
 
-        public Home(string username, string password, string phpSessionId, string nameOfPerson, string nameOfAcademy, string getresp)
+        public Home(string username, string password, string phpSessionId, string nameOfPerson, string nameOfAcademy, string getresp, CookieContainer _cookieContainer, HttpClientHandler _handler, HttpClient _client)
         {
             InitializeComponent();
             this.username = username;
@@ -28,7 +36,12 @@ namespace eHours
             this.nameOfAcademy = nameOfAcademy;
             this.getresp = getresp;
 
-            this.Text = $"{nameOfAcademy} Portal for {nameOfPerson} - Made by Neil Patrao";
+            this._cookieContainer = _cookieContainer;
+            this._handler = _handler;
+            this._client = _client;
+
+            doc.LoadHtml(getresp);
+
             this.Load += Home_Load;
             this.Resize += Home_Resize;
         }
@@ -41,45 +54,70 @@ namespace eHours
 
         private void Home_Resize(object sender, EventArgs e)
         {
-            // Refresh the layout when the form is resized
-            CreateLayout();
+            homeMenuPanel.Width = this.ClientSize.Width;
+            homeMenuPanel.Height = this.ClientSize.Height;
+            foreach (var button in requestButtons)
+            {
+                button.Width = homeMenuPanel.ClientSize.Width - 40;
+            }
         }
 
         private void ParseEHourRequests()
         {
-            string pattern = @"<tr class='entry'>.*?<button class='btn' name = 'ehours_request_descr'.*?value = (.*?) .*?>(.*?)</button>.*?<td> (.*?) </td>.*?<td> (.*?) </td>";
-            MatchCollection matches = Regex.Matches(getresp, pattern, RegexOptions.Singleline);
+            // Use XPath to select all <tr> elements with class 'entry'
+            var rows = doc.DocumentNode.SelectNodes("//tr[@class='entry']");
 
-            foreach (Match match in matches)
+            if (rows != null)
             {
-                string value = match.Groups[1].Value;
-                string description = match.Groups[2].Value;
-                string hours = match.Groups[3].Value;
-                string date = match.Groups[4].Value;
-
-                eHourRequests.Add(new EHourRequest
+                foreach (var row in rows)
                 {
-                    Value = value,
-                    Description = description,
-                    Hours = hours,
-                    Date = date
-                });
+                    // Extract data from the <button> element within the <tr>
+                    var buttonNode = row.SelectSingleNode(".//button[@name='ehours_request_descr']");
+                    var value = buttonNode.GetAttributeValue("value", string.Empty);
+                    var description = buttonNode.InnerText.Trim();
+
+                    // Extract the values from <td> elements within the <tr>
+                    var tdNodes = row.SelectNodes(".//td");
+                    if (tdNodes != null && tdNodes.Count >= 3)
+                    {
+                        var hours = tdNodes[1].InnerText.Trim();
+                        var date = tdNodes[2].InnerText.Trim();
+
+                        eHourRequests.Add(new EHourRequest
+                        {
+                            Value = value,
+                            Description = description,
+                            Hours = hours,
+                            Date = date
+                        });
+                    }
+                }
             }
         }
 
+        private List<Button> requestButtons = new List<Button>();  // Store buttons in a list
+
         private void CreateLayout()
         {
-            this.Controls.Clear();
+            homeMenuPanel.Controls.Clear();
+            homeMenuPanel.AutoScroll = true;
 
-            // Create a panel to hold the content
-            Panel contentPanel = new Panel
+            // Add or update the eHourCount label
+            var node = doc.DocumentNode.SelectSingleNode("//*[@id='HourCount']");
+            if (node != null)
             {
-                Dock = DockStyle.Fill,
-                AutoScroll = true
-            };
-            this.Controls.Add(contentPanel);
+                Label eHourCount = new Label
+                {
+                    Text = node.InnerText.Replace("\t", "").Trim(),
+                    AutoSize = true,
+                    Location = new Point(10, 10),
+                    Font = new Font("Arial", 12),
+                    ForeColor = Color.White
+                };
+                homeMenuPanel.Controls.Add(eHourCount);
+            }
 
-            // Add title
+            // Add or update the title label
             Label titleLabel = new Label
             {
                 Text = $"{nameOfAcademy} eHours for {nameOfPerson}",
@@ -89,40 +127,69 @@ namespace eHours
                 Dock = DockStyle.Top,
                 Padding = new Padding(0, 20, 0, 20)
             };
-            contentPanel.Controls.Add(titleLabel);
+            homeMenuPanel.Controls.Add(titleLabel);
 
-            // Add eHour requests
-            int yOffset = titleLabel.Bottom + 20;
-            foreach (var request in eHourRequests)
+            // Adjust existing buttons or create new ones
+            int yOffset = titleLabel.Height + 20;
+            for (int i = 0; i < eHourRequests.Count; i++)
             {
-                Button requestButton = new Button
+                Button requestButton;
+                if (i < requestButtons.Count)
                 {
-                    Text = $"{request.Description}\nHours: {request.Hours}\nDate: {request.Date}",
-                    TextAlign = ContentAlignment.MiddleLeft,
-                    Font = new Font("Arial", 10),
-                    Width = contentPanel.Width - 40,
-                    Height = 80,
-                    Location = new Point(20, yOffset),
-                    Tag = request.Value
-                };
-                requestButton.Click += RequestButton_Click;
-                contentPanel.Controls.Add(requestButton);
+                    // Update existing button
+                    requestButton = requestButtons[i];
+                }
+                else
+                {
+                    // Create new button if needed
+                    requestButton = new Button
+                    {
+                        TextAlign = ContentAlignment.MiddleLeft,
+                        Font = new Font("Arial", 10),
+                        Width = homeMenuPanel.ClientSize.Width - 40,
+                        Height = 80,
+                        Location = new Point(20, yOffset),
+                        Tag = eHourRequests[i].Value,
+                        BackColor = Color.FromArgb(60, 60, 60),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat
+                    };
+                    requestButton.FlatAppearance.BorderColor = Color.Gray;
+                    requestButton.Click += RequestButton_Click;
+                    homeMenuPanel.Controls.Add(requestButton);
+                    requestButtons.Add(requestButton);  // Add to the list
+                }
+
+                // Update the button's properties
+                requestButton.Text = $"{eHourRequests[i].Description}\nHours: {eHourRequests[i].Hours}\nDate: {eHourRequests[i].Date}";
+                requestButton.Location = new Point(20, yOffset);
 
                 yOffset += requestButton.Height + 10;
             }
 
-            // Optimize background rendering
+            // Remove excess buttons
+            while (requestButtons.Count > eHourRequests.Count)
+            {
+                Button buttonToRemove = requestButtons.Last();
+                requestButtons.Remove(buttonToRemove);
+                homeMenuPanel.Controls.Remove(buttonToRemove);
+                buttonToRemove.Dispose();  // Clean up
+            }
+
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
             this.UpdateStyles();
         }
 
+
         private void RequestButton_Click(object sender, EventArgs e)
         {
             Button clickedButton = (Button)sender;
             string value = (string)clickedButton.Tag;
-            MessageBox.Show($"Clicked request with value: {value}", "eHour Request", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            // Here you can implement the logic to show more details or perform actions related to the clicked eHour request
+            RequestViewer requestViewer = new RequestViewer(value, phpSessionId, clickedButton.Text, _cookieContainer, _handler, _client);
+            requestViewer.Show();
+            requestViewer.Location = new Point(this.Location.X, this.Location.Y);
+            requestViewer.Size = new Size(this.Size.Width, this.Size.Height);
         }
     }
 
@@ -133,4 +200,14 @@ namespace eHours
         public string Hours { get; set; }
         public string Date { get; set; }
     }
+
+    //  TODO add support for uploading (probably make a new .CS file)
+    //  POSTs to https://academyendorsement.olatheschools.com/Student/makeRequest.php
+    //  5 elements:
+    //      - title box (name="title" in POST)
+    //      - activity date (name="activityDate" in POST)
+    //      - number of hours req'd (name="hours")
+    //      - description (name="description")
+    //      - images (name="img[]" ? idk)
+    //          - allow multiple images
 }

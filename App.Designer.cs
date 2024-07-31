@@ -75,9 +75,10 @@ namespace eHours
             // 
             this.githubOpen.AutoSize = true;
             this.githubOpen.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.githubOpen.Location = new System.Drawing.Point(91, 4);
+            this.githubOpen.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.githubOpen.Location = new System.Drawing.Point(78, 0);
             this.githubOpen.Name = "githubOpen";
-            this.githubOpen.Size = new System.Drawing.Size(132, 39);
+            this.githubOpen.Size = new System.Drawing.Size(147, 42);
             this.githubOpen.TabIndex = 4;
             this.githubOpen.Text = "This is NOT an official app\r\nSource code on GitHub\r\nnpxrc/ehourwinapp";
             this.githubOpen.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -85,21 +86,25 @@ namespace eHours
             // 
             // uPass
             // 
+            this.uPass.Font = new System.Drawing.Font("Consolas", 9F);
             this.uPass.Location = new System.Drawing.Point(162, 55);
             this.uPass.Name = "uPass";
-            this.uPass.Size = new System.Drawing.Size(154, 20);
+            this.uPass.Size = new System.Drawing.Size(154, 22);
             this.uPass.TabIndex = 3;
             this.uPass.UseSystemPasswordChar = true;
             // 
             // uName
             // 
+            this.uName.Font = new System.Drawing.Font("Consolas", 9F);
             this.uName.Location = new System.Drawing.Point(4, 55);
             this.uName.Name = "uName";
-            this.uName.Size = new System.Drawing.Size(154, 20);
+            this.uName.Size = new System.Drawing.Size(154, 22);
             this.uName.TabIndex = 2;
+            this.uName.Text = "test";
             // 
             // menuExitApp
             // 
+            this.menuExitApp.Font = new System.Drawing.Font("Rubik", 9.75F);
             this.menuExitApp.Location = new System.Drawing.Point(161, 81);
             this.menuExitApp.Name = "menuExitApp";
             this.menuExitApp.Size = new System.Drawing.Size(155, 40);
@@ -110,6 +115,7 @@ namespace eHours
             // 
             // menuStudentLogin
             // 
+            this.menuStudentLogin.Font = new System.Drawing.Font("Rubik", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStudentLogin.Location = new System.Drawing.Point(3, 81);
             this.menuStudentLogin.Name = "menuStudentLogin";
             this.menuStudentLogin.Size = new System.Drawing.Size(155, 40);
@@ -132,7 +138,7 @@ namespace eHours
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.DarkGray;
+            this.BackColor = System.Drawing.Color.Gray;
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(750, 500);

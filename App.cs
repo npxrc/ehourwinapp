@@ -14,7 +14,6 @@ namespace eHours
     public partial class App : Form
     {
         private string appDataFolder = "eHours";
-        private static readonly HttpClient client = new HttpClient();
         private string uNamePlaceholderText = "Enter your username";
         private string uPassPlaceholderText = "Enter your password";
         private Color placeholderColor = Color.Gray;
@@ -110,9 +109,6 @@ namespace eHours
 
         private async Task<string> Post()
         {
-            Console.WriteLine("Posting.");
-            Console.WriteLine($"Username: {username}");
-            Console.WriteLine($"Password: {password}");
             var values = new Dictionary<string, string>
             {
                 { "uName", username },
@@ -268,17 +264,22 @@ namespace eHours
                 MessageBox.Show("Enter your district username and password.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            Console.WriteLine("Login clicked.");
             username = uName.Text;
             password = uPass.Text;
-            Console.WriteLine($"Username: {username}");
-            Console.WriteLine($"Password: {password}");
             Authenticate((success) =>
             {
                 if (success)
                 {
                     // Handle successful authentication
-                    menuAuthSuccess();
+                    DialogResult warningofstupidusers = MessageBox.Show("WARNING: This project is in beta, by continuing, you agree to allow this app to store your password in PLAIN text in the %localappdata%\\ehours folder, with no encyrption, and you acknowledge that if your credentials are stolen, it is YOUR fault.", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                    if (warningofstupidusers == DialogResult.Yes)
+                    {
+                        menuAuthSuccess();
+                    }
+                    else if (warningofstupidusers == DialogResult.No)
+                    {
+                        return;
+                    }
                 }
                 else
                 {
@@ -295,8 +296,6 @@ namespace eHours
         {
             WriteToFile("uName", username);
             WriteToFile("uPass", password);
-            Console.WriteLine($"Username: {username}");
-            Console.WriteLine($"Password: {password}");
             string resp = await Post();
             resp = resp.Replace("\n", "");
             if (resp.Contains("<h2>Welcome to your"))
@@ -309,7 +308,7 @@ namespace eHours
                 string getresp = await Get("https://academyendorsement.olatheschools.com/Student/studentEHours.php");
 
                 // Create and show the new form, passing the necessary parameters and reference to this form
-                Home home = new Home(username, password, phpSessionId, nameOfPerson, nameOfAcademy, getresp);
+                Home home = new Home(username, password, phpSessionId, nameOfPerson, nameOfAcademy, getresp, _cookieContainer, _handler, _client);
                 this.Hide();
                 home.Show();
                 home.Location = new Point(this.Location.X, this.Location.Y);
