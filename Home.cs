@@ -8,6 +8,8 @@ using HtmlAgilityPack;
 using System.Threading;
 using System.Net;
 using System.Net.Http;
+using System.Web;
+using System.IO;
 
 namespace eHours
 {
@@ -44,22 +46,60 @@ namespace eHours
 
             this.Load += Home_Load;
             this.Resize += Home_Resize;
+
+            studentName.Text = nameOfPerson;
+            studentAcademy.Text = nameOfAcademy;
         }
 
         private void Home_Load(object sender, EventArgs e)
         {
             ParseEHourRequests();
             CreateLayout();
+            Home_Resize("", EventArgs.Empty);
         }
 
         private void Home_Resize(object sender, EventArgs e)
         {
+            homeMenuPanel.Location = new Point(0, 100);
             homeMenuPanel.Width = this.ClientSize.Width;
             homeMenuPanel.Height = this.ClientSize.Height;
             foreach (var button in requestButtons)
             {
                 button.Width = homeMenuPanel.ClientSize.Width - 40;
             }
+
+            var stdNameX = ((this.ClientSize.Width / 2) - studentName.Width) / 2;
+            studentName.Location = new Point(stdNameX, 10);
+
+            var stdAcadX = ((this.ClientSize.Width / 2) - studentAcademy.Width) / 2;
+            studentAcademy.Location = new Point(stdAcadX, (10+studentName.Height));
+
+            var divX = (this.ClientSize.Width - dividerBlack.Width) / 2;
+            dividerBlack.Location = new Point(divX, 11);
+
+            var currEhrsX = (((this.ClientSize.Width / 2) - eHourCount.Width) / 2)+(this.ClientSize.Width/2);
+            var currEhrsY = (100 - eHourCount.Height) / 2;
+            eHourCount.Location = new Point(currEhrsX, currEhrsY);
+        }
+        private string RemoveExcessLineBreaks(string text)
+        {
+            // Normalize line breaks by ensuring a consistent line break character
+            text = text.Replace("\r\n", "\n").Replace("\r", "\n");
+
+            // Split the text into lines
+            string[] lines = text.Split('\n');
+
+            // Remove the first two and last two lines
+            if (lines.Length <= 4)
+            {
+                // If there are four or fewer lines, return an empty string or handle as needed
+                return string.Empty;
+            }
+
+            // Take lines from index 2 to the length minus 2
+            string result = string.Join("\n", lines.Skip(2).Take(lines.Length - 4));
+
+            return result;
         }
 
         private void ParseEHourRequests()
@@ -75,6 +115,7 @@ namespace eHours
                     var buttonNode = row.SelectSingleNode(".//button[@name='ehours_request_descr']");
                     var value = buttonNode.GetAttributeValue("value", string.Empty);
                     var description = buttonNode.InnerText.Trim();
+                    description = HttpUtility.HtmlDecode(description);
 
                     // Extract the values from <td> elements within the <tr>
                     var tdNodes = row.SelectNodes(".//td");
@@ -106,15 +147,7 @@ namespace eHours
             var node = doc.DocumentNode.SelectSingleNode("//*[@id='HourCount']");
             if (node != null)
             {
-                Label eHourCount = new Label
-                {
-                    Text = node.InnerText.Replace("\t", "").Trim(),
-                    AutoSize = true,
-                    Location = new Point(10, 10),
-                    Font = new Font("Arial", 12),
-                    ForeColor = Color.White
-                };
-                homeMenuPanel.Controls.Add(eHourCount);
+                eHourCount.Text = RemoveExcessLineBreaks(node.InnerText);
             }
 
             // Add or update the title label
@@ -181,7 +214,6 @@ namespace eHours
             this.UpdateStyles();
         }
 
-
         private void RequestButton_Click(object sender, EventArgs e)
         {
             Button clickedButton = (Button)sender;
@@ -189,7 +221,7 @@ namespace eHours
             RequestViewer requestViewer = new RequestViewer(value, phpSessionId, clickedButton.Text, _cookieContainer, _handler, _client);
             requestViewer.Show();
             requestViewer.Location = new Point(this.Location.X, this.Location.Y);
-            requestViewer.Size = new Size(this.Size.Width, this.Size.Height);
+            requestViewer.Size = new Size(750, 500);
         }
     }
 

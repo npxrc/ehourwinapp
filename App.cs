@@ -1,9 +1,9 @@
-﻿using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
+﻿//App.cs
+
 using System.Net;
 using System.IO;
 using System.Windows.Forms;
 using System;
-using Windows.Security.Credentials;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,18 +34,25 @@ namespace eHours
             menuStudentLogin.Cursor = Cursors.Arrow;
             menuExitApp.Cursor = Cursors.Arrow;
 
-            string username = ReadFromFile("uName");
-            if (username != null)
+            try
             {
-                uName.Text = username;
-                uName.ForeColor = textColor;
+                var (username, password) = CredentialManager.ReadCredential("eHours");
+                if (!string.IsNullOrEmpty(username))
+                {
+                    uName.Text = username;
+                    uName.ForeColor = textColor;
+                }
+                if (!string.IsNullOrEmpty(password))
+                {
+                    uPass.Text = password;
+                    uPass.ForeColor = textColor;
+                    uPass.UseSystemPasswordChar = true;
+                }
             }
-            string password = ReadFromFile("uPass");
-            if (password != null)
+            catch (Exception ex)
             {
-                uPass.Text = password;
-                uPass.ForeColor = textColor;
-                uPass.UseSystemPasswordChar = true;
+                // Handle the case where no credentials are found
+                Console.WriteLine($"No stored credentials found: {ex.Message}");
             }
         }
 
@@ -198,35 +205,6 @@ namespace eHours
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
-
-        private async void Authenticate(Action<bool> callback)
-        //https://learn.microsoft.com/en-us/windows/apps/develop/security/windows-hello-login, and https://stackoverflow.com/questions/943852/how-to-send-an-https-get-request-in-c-sharp
-        {
-            callback?.Invoke(true);
-            /*bool supported = await KeyCredentialManager.IsSupportedAsync();
-            if (supported)
-            {
-                KeyCredentialRetrievalResult result =
-                    await KeyCredentialManager.RequestCreateAsync("login",
-                    KeyCredentialCreationOption.ReplaceExisting);
-                if (result.Status == KeyCredentialStatus.Success)
-                {
-                    // Invoke the callback with a success status
-                    callback?.Invoke(true);
-                }
-                else
-                {
-                    // Handle the case where key credentials are not supported
-                    callback?.Invoke(false);
-
-                }
-            }
-            else
-            {
-                // Handle the case where key credentials are not supported
-                callback?.Invoke(false);
-            }*/
-        }
         private void OnFormResize(object sender, EventArgs e)
         {
             // Center the PictureBox on form resize
@@ -257,7 +235,7 @@ namespace eHours
                 this.Close();
             }
         }
-        private void menuStudentLogin_Click(object sender, EventArgs e)
+        private async void menuStudentLogin_Click(object sender, EventArgs evtarg)
         {
             if (uName.Text == uNamePlaceholderText || uPass.Text == uPassPlaceholderText)
             {
@@ -266,36 +244,7 @@ namespace eHours
             }
             username = uName.Text;
             password = uPass.Text;
-            Authenticate((success) =>
-            {
-                if (success)
-                {
-                    // Handle successful authentication
-                    DialogResult warningofstupidusers = MessageBox.Show("WARNING: This project is in beta, by continuing, you agree to allow this app to store your password in PLAIN text in the %localappdata%\\ehours folder, with no encyrption, and you acknowledge that if your credentials are stolen, it is YOUR fault.", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
-                    if (warningofstupidusers == DialogResult.Yes)
-                    {
-                        menuAuthSuccess();
-                    }
-                    else if (warningofstupidusers == DialogResult.No)
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    // Handle failed authentication
-                    DialogResult dialogResult = MessageBox.Show("Could not authenticate, try again?", "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Information);
-                    if (dialogResult == DialogResult.Retry)
-                    {
-                        menuStudentLogin_Click("", EventArgs.Empty);
-                    }
-                }
-            });
-        }
-        private async void menuAuthSuccess()
-        {
-            WriteToFile("uName", username);
-            WriteToFile("uPass", password);
+            CredentialManager.WriteCredential("eHours", username, password);
             string resp = await Post();
             resp = resp.Replace("\n", "");
             if (resp.Contains("<h2>Welcome to your"))

@@ -8,17 +8,16 @@ using HtmlAgilityPack;
 using System.Threading;
 using System.Net;
 using System.Net.Http;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 using System.IO;
+using System.Web;
 
 namespace eHours
 {
     public partial class RequestViewer : Form
     {
         private string appDataFolder = "eHours";
-        
+        private bool canDelete = false;
         private string id;
         private string phpSessionId;
         private string eventName;
@@ -43,6 +42,8 @@ namespace eHours
             ResizeFunct("", EventArgs.Empty);
 
             _ = PostAsync();
+
+            this.Text = $"Request Viewer - {this.eventName}";
         }
 
         private void ResizeFunct(object sender, EventArgs e)
@@ -84,7 +85,6 @@ namespace eHours
         {
             try
             {
-                Console.WriteLine("Posting.");
                 var values = new Dictionary<string, string>
                 {
                     { "ehours_request_descr", id }
@@ -106,24 +106,27 @@ namespace eHours
                 var response = await _client.PostAsync("https://academyendorsement.olatheschools.com/Student/eHourDescription.php", content);
                 var responseString = await response.Content.ReadAsStringAsync();
 
-                Console.WriteLine("Successfully posted");
-
-                WriteToFile("gettingtheevent.html", responseString);
-
-                Console.WriteLine("Initializing HtmlAgilityPack");
+                WriteToFile("gettingtheevent.txt", responseString);
 
                 doc.LoadHtml(responseString);
-
-                Console.WriteLine("Success");
-
-                Console.WriteLine("Selecting .whitetext and #description");
-
+                deleteRequestButton.Visible = false;
+                if (doc.DocumentNode.SelectSingleNode("//*[@id='Delete']").InnerHtml.Length>1)
+                {
+                    deleteRequestButton.Visible = true;
+                    Console.WriteLine(doc.DocumentNode.SelectSingleNode("//*[@id='Delete']").InnerHtml);
+                    canDelete = true;
+                }
                 var whiteTextNodes = doc.DocumentNode.SelectNodes("//*[@class='whitetext']");
                 if (whiteTextNodes != null && whiteTextNodes.Count >= 2)
                 {
                     string reqdHrs = whiteTextNodes[0].InnerText;
+                    reqdHrs = HttpUtility.HtmlDecode(reqdHrs);
                     string dateSubtd = whiteTextNodes[1].InnerText;
+                    dateSubtd = HttpUtility.HtmlDecode(dateSubtd);
                     string desc = doc.DocumentNode.SelectSingleNode("//textarea[@id='description']")?.InnerText;
+                    desc = HttpUtility.HtmlDecode(desc);
+
+                    GetImages(responseString);
 
                     // Update UI elements with the retrieved data
                     UpdateUIWithData(reqdHrs, dateSubtd, desc);
@@ -138,6 +141,12 @@ namespace eHours
                 Console.WriteLine($"Error: {ex.Message}");
                 WriteToFile("error.txt", ex.Message);
             }
+        }
+
+        private void GetImages(string responseString)
+        {
+            var imgs = doc.DocumentNode.SelectNodes("//img");
+            //todo: actually write this code
         }
 
         private void UpdateUIWithData(string reqdHrs, string dateSubtd, string desc)
@@ -196,6 +205,46 @@ namespace eHours
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+
+        private async void deleteReq(object sender, EventArgs e)
+        {
+            DialogResult delete = MessageBox.Show("Are you sure you want to delete this?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (delete == DialogResult.Yes)
+            {
+                try
+                {
+                    var values = new Dictionary<string, string>
+                    {
+                        { "del", id }
+                    };
+
+                    var content = new FormUrlEncodedContent(values);
+
+                    // Ensure the PHPSESSID cookie is set for the domain
+                    Uri uri = new Uri("https://academyendorsement.olatheschools.com/");
+                    _cookieContainer.Add(uri, new Cookie("PHPSESSID", phpSessionId));
+
+                    // Set User-Agent if not already set
+                    if (!_client.DefaultRequestHeaders.Contains("User-Agent"))
+                    {
+                        _client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+                    }
+
+                    // Use HTTPS
+                    var response = await _client.PostAsync("https://academyendorsement.olatheschools.com/deleteRequest.php", content);
+                    var responseString = await response.Content.ReadAsStringAsync();
+
+                    WriteToFile("delreq.txt", responseString);
+
+                    this.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                    WriteToFile("error.txt", ex.Message);
+                }
             }
         }
     }

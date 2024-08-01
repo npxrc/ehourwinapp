@@ -36,6 +36,7 @@
             this.imgLoadingPanel = new System.Windows.Forms.Panel();
             this.butThatsOkay = new System.Windows.Forms.Label();
             this.imgNotSupported = new System.Windows.Forms.Label();
+            this.deleteRequestButton = new System.Windows.Forms.Button();
             this.imgLoadingPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -90,10 +91,9 @@
             this.descriptionBox.Name = "descriptionBox";
             this.descriptionBox.ReadOnly = true;
             this.descriptionBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.descriptionBox.Size = new System.Drawing.Size(550, 300);
+            this.descriptionBox.Size = new System.Drawing.Size(550, 279);
             this.descriptionBox.TabIndex = 4;
-            this.descriptionBox.Text = "if you reading, this chill out, still making a request to the ehours portal. if t" +
-    "his text doesn\'t update soon, check your internet connection";
+            this.descriptionBox.Text = resources.GetString("descriptionBox.Text");
             // 
             // imgLoadingPanel
             // 
@@ -131,13 +131,25 @@
             this.imgNotSupported.TabIndex = 3;
             this.imgNotSupported.Text = "Image Loading is not supported";
             // 
+            // deleteRequestButton
+            // 
+            this.deleteRequestButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.deleteRequestButton.Location = new System.Drawing.Point(12, 12);
+            this.deleteRequestButton.Name = "deleteRequestButton";
+            this.deleteRequestButton.Size = new System.Drawing.Size(107, 23);
+            this.deleteRequestButton.TabIndex = 5;
+            this.deleteRequestButton.Text = "Delete Request";
+            this.deleteRequestButton.UseVisualStyleBackColor = true;
+            this.deleteRequestButton.Click += new System.EventHandler(this.deleteReq);
+            // 
             // RequestViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(113)))), ((int)(((byte)(127)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(750, 500);
+            this.Controls.Add(this.deleteRequestButton);
             this.Controls.Add(this.descriptionBox);
             this.Controls.Add(this.dateSubtdLabel);
             this.Controls.Add(this.imgLoadingPanel);
@@ -145,7 +157,7 @@
             this.Controls.Add(this.eventNameLabel);
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(766, 539);
+            this.MinimumSize = new System.Drawing.Size(400, 450);
             this.Name = "RequestViewer";
             this.Text = "eHour Portal - Made by Neil Patrao";
             this.imgLoadingPanel.ResumeLayout(false);
@@ -164,5 +176,6 @@
         private System.Windows.Forms.Panel imgLoadingPanel;
         private System.Windows.Forms.Label butThatsOkay;
         private System.Windows.Forms.Label imgNotSupported;
+        private System.Windows.Forms.Button deleteRequestButton;
     }
 }
